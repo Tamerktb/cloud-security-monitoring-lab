@@ -1,0 +1,18 @@
+# Terraform
+terraform/.terraform/
+terraform/terraform.tfstate*
+terraform/terraform.tfvars
+*.tfvars
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# Scripts
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*

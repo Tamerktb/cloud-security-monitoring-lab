@@ -1,0 +1,42 @@
+# Wazuh detection rule: SSH Brute Force Attempt
+# Detects multiple failed SSH login attempts within a time window
+#
+# Severity: High (level 10)
+# MITRE ATT&CK: T1110 - Brute Force
+# Response: Block source IP, alert SOC via Slack/email
+
+id: 5710
+name: SSH Brute Force Attempt Detected
+group: authentication, brute_force, ssh
+
+description: >
+  Multiple failed SSH authentication attempts detected from a single source IP
+  within 5 minutes, indicating a brute force attack.
+
+level: 10
+
+rule:
+  frequency: 5
+  timeframe: 300
+  not_match:
+    - user: "root"
+      location: "localhost"
+  match:
+    - status: "failed"
+      location: "secure"
+
+field:
+  - source_ip
+  - username
+  - count
+
+alert:
+  - action: email
+    subject: "[HIGH] SSH Brute Force from {{source_ip}}"
+    to: soc@example.com
+  - action: slack
+    channel: "#security-alerts"
+    message: "SSH brute force detected from {{source_ip}} - {{count}} attempts in 5 minutes"
+  - action: command
+    script: /usr/share/wazuh-server/integrations/custom/block_ip.sh
+    args: ["{{source_ip}}"]

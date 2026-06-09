@@ -1,0 +1,47 @@
+# Wazuh detection rule: S3 Bucket Public Access
+# Detects attempts to access S3 buckets anonymously or without authorization
+#
+# Severity: Critical (level 12)
+# MITRE ATT&CK: T1530 - Data from Cloud Storage
+# Response: Review bucket policy, restrict public access immediately
+
+id: 5720
+name: S3 Bucket Anonymous Access Attempt
+group: cloud, aws, s3, data_exposure
+
+description: >
+  Anonymous or unauthenticated access attempt detected on an S3 bucket.
+  This may indicate data enumeration or exposure of sensitive data.
+
+level: 12
+
+rule:
+  match:
+    - source: "cloudtrail"
+      event_name: "ListBuckets"
+      user_identity_type: "AWSAccount"
+  or:
+    - source: "cloudtrail"
+      event_name: "GetObject"
+      error_code: "AccessDenied"
+      error_message: "Access Denied"
+    - source: "cloudtrail"
+      event_name: "ListObjects"
+      error_code: "AccessDenied"
+
+field:
+  - source_ip
+  - bucket_name
+  - user_agent
+  - request_parameters
+
+alert:
+  - action: email
+    subject: "[CRITICAL] S3 Anonymous Access from {{source_ip}}"
+    to: soc@example.com
+  - action: slack
+    channel: "#security-alerts"
+    message: "CRITICAL: Anonymous S3 access attempt on bucket {{bucket_name}} from {{source_ip}}"
+  - action: command
+    script: /usr/share/wazuh-server/integrations/custom/restrict_bucket.sh
+    args: ["{{bucket_name}}"]

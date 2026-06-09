@@ -1,0 +1,45 @@
+# Wazuh detection rule: Unauthorized API Call
+# Detects suspicious or unauthorized AWS API activity
+#
+# Severity: Medium (level 8)
+# MITRE ATT&CK: T1078 - Valid Accounts (misuse)
+# Response: Verify user activity, revoke compromised credentials if needed
+
+id: 5730
+name: Suspicious Unauthorized API Call Detected
+group: cloud, aws, cloudtrail, iam
+
+description: >
+  An IAM user or role made API calls that resulted in authorization failures.
+  Multiple AccessDenied errors may indicate privilege escalation attempts.
+
+level: 8
+
+rule:
+  frequency: 3
+  timeframe: 300
+  match:
+    - source: "cloudtrail"
+      error_code: "AccessDenied"
+      user_identity_type: "IAMUser"
+  not_match:
+    - event_name: "ConsoleLogin"
+
+field:
+  - source_ip
+  - user_identity_arn
+  - event_name
+  - error_message
+  - request_parameters
+  - count
+
+alert:
+  - action: email
+    subject: "[MEDIUM] Unauthorized API by {{user_identity_arn}}"
+    to: soc@example.com
+  - action: slack
+    channel: "#security-alerts"
+    message: "Unauthorized API calls detected: {{event_name}} from {{source_ip}} (user: {{user_identity_arn}})"
+  - action: command
+    script: /usr/share/wazuh-server/integrations/custom/disable_iam_key.sh
+    args: ["{{user_identity_arn}}"]
