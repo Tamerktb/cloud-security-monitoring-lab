@@ -14,17 +14,14 @@ This project provisions a full security operations center (SOC) lab in AWS inclu
 
 ## Architecture
 
+![Cloud Security Monitoring Lab architecture](architecture.png)
+
+Data flow in one line:
+
 ```
-Internet
-    |
-    ├── Monitoring Instance (Wazuh Server) :443
-    │       └── Ingest: agent logs, CloudTrail, VPC Flow Logs
-    │
-    ├── Honeypot (Cowrie) :22
-    │       └── Captures attacker SSH interactions
-    │
-    ├── CloudTrail → S3 → Wazuh
-    └── VPC Flow Logs → CloudWatch → Wazuh
+attacker ──SSH──▶ Cowrie honeypot (EC2)          ─┐
+CloudTrail ──▶ S3 ─────────────────────────────── ─┼──▶ Wazuh manager ──▶ detections
+VPC Flow Logs ──▶ CloudWatch ──────────────────── ─┘
 ```
 
 ## Prerequisites
